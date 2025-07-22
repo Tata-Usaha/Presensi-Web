@@ -39,7 +39,7 @@
       margin-bottom: 1.5rem;
     }
 
-    input[type="text"] {
+    input[type="text"], input[type="file"] {
       padding: 0.5rem;
       font-size: 1rem;
       width: 300px;
@@ -91,13 +91,13 @@
 
   <header>
     <div style="flex: 1;">
-      <img src="TU.png" alt="Logo TU">
+      <img src="tu.png" alt="Logo TU">
     </div>
     <div style="flex: 2; text-align: center;">
       <h1>PPLK UNIVERSITAS - TATA USAHA</h1>
     </div>
     <div style="flex: 1; text-align: right;">
-      <img src="MASKOT BARA UPB 2025 (9).png" alt="Maskot" style="height: 80px;" />
+      <img src="MASKOT BARA UPB 2025.png" alt="Maskot" style="height: 80px;" />
     </div>
   </header>
 
@@ -115,6 +115,7 @@
       <div class="button-group">
         <button id="downloadBtn">Download Kehadiran</button>
         <button id="resetBtn" style="background-color: #f8d7da; border: 1px solid #dc3545;">Reset Kehadiran</button>
+        <button id="clearBtn" style="background-color: #fce38a;">Hapus Semua Data</button>
       </div>
     </div>
 
@@ -141,6 +142,14 @@
   <script>
     let mahasiswaList = [];
 
+    // Ambil data dari localStorage saat halaman dibuka
+    const savedData = localStorage.getItem("presensiData");
+    if (savedData) {
+      mahasiswaList = JSON.parse(savedData);
+      renderTabel();
+    }
+
+    // Upload Excel
     document.getElementById("uploadExcel").addEventListener("change", function(e) {
       const reader = new FileReader();
       reader.onload = function(e) {
@@ -154,6 +163,7 @@
           prodi: m.prodi || "-",
           hadir: false
         }));
+        localStorage.setItem("presensiData", JSON.stringify(mahasiswaList));
         renderTabel();
       };
       reader.readAsArrayBuffer(e.target.files[0]);
@@ -174,18 +184,21 @@
       });
     }
 
+    // Scan barcode
     document.getElementById("scanInput").addEventListener("keydown", function(e) {
       if (e.key === "Enter") {
         const scannedNIM = e.target.value.trim();
         const found = mahasiswaList.find(m => m.nim === scannedNIM);
         if (found) {
           found.hadir = true;
+          localStorage.setItem("presensiData", JSON.stringify(mahasiswaList));
           renderTabel();
         }
         e.target.value = "";
       }
     });
 
+    // Download kehadiran
     document.getElementById("downloadBtn").addEventListener("click", function () {
       const data = mahasiswaList.map(m => ({
         NIM: m.nim,
@@ -199,9 +212,20 @@
       XLSX.writeFile(workbook, "rekap_presensi.xlsx");
     });
 
+    // Reset kehadiran
     document.getElementById("resetBtn").addEventListener("click", function () {
       if (confirm("Yakin ingin mereset semua status ke 'Belum Hadir'?")) {
         mahasiswaList.forEach(m => m.hadir = false);
+        localStorage.setItem("presensiData", JSON.stringify(mahasiswaList));
+        renderTabel();
+      }
+    });
+
+    // Hapus semua data
+    document.getElementById("clearBtn").addEventListener("click", function () {
+      if (confirm("Hapus semua data dari sistem ini?")) {
+        localStorage.removeItem("presensiData");
+        mahasiswaList = [];
         renderTabel();
       }
     });
