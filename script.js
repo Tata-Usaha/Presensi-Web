@@ -2,7 +2,7 @@
 const firebaseConfig = {
   apiKey: "AIzaSyCDpuIMrr6OcqhzeU54PxA5ecONwck-wng",
   authDomain: "sistem-absensi-tata-usaha.firebaseapp.com",
-    databaseURL: "https://sistem-absensi-tata-usaha-default-rtdb.asia-southeast1.firebasedatabase.app",
+  databaseURL: "https://sistem-absensi-tata-usaha-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "sistem-absensi-tata-usaha",
   storageBucket: "sistem-absensi-tata-usaha.appspot.com",
   messagingSenderId: "136085367799",
@@ -30,10 +30,11 @@ function renderTabel() {
   });
 }
 
-// Load from Firebase on load
+// Load from Firebase on page load
 db.ref("mahasiswa").once("value", snapshot => {
   if (snapshot.exists()) {
-    mahasiswaList = snapshot.val();
+    const data = snapshot.val();
+    mahasiswaList = Object.values(data);
     renderTabel();
   }
 });
@@ -51,7 +52,11 @@ document.getElementById("uploadExcel").addEventListener("change", function(e) {
       prodi: m.prodi || "-",
       hadir: false
     }));
-    db.ref("mahasiswa").set(mahasiswaList);
+    const dataObj = {};
+    mahasiswaList.forEach(m => {
+      dataObj[m.nim] = m;
+    });
+    db.ref("mahasiswa").set(dataObj);
     renderTabel();
   };
   reader.readAsArrayBuffer(e.target.files[0]);
@@ -63,7 +68,11 @@ document.getElementById("scanInput").addEventListener("keydown", function(e) {
     const found = mahasiswaList.find(m => m.nim === scannedNIM);
     if (found) {
       found.hadir = true;
-      db.ref("mahasiswa").set(mahasiswaList);
+      const dataObj = {};
+      mahasiswaList.forEach(m => {
+        dataObj[m.nim] = m;
+      });
+      db.ref("mahasiswa").set(dataObj);
       renderTabel();
     }
     e.target.value = "";
@@ -86,7 +95,11 @@ document.getElementById("downloadBtn").addEventListener("click", function () {
 document.getElementById("resetBtn").addEventListener("click", function () {
   if (confirm("Yakin ingin mereset semua status ke 'Belum Hadir'?")) {
     mahasiswaList.forEach(m => m.hadir = false);
-    db.ref("mahasiswa").set(mahasiswaList);
+    const dataObj = {};
+    mahasiswaList.forEach(m => {
+      dataObj[m.nim] = m;
+    });
+    db.ref("mahasiswa").set(dataObj);
     renderTabel();
   }
 });
