@@ -145,13 +145,17 @@
 
     let mahasiswaList = [];
 
-    db.ref("mahasiswa").once("value", snapshot => {
+   // Listener realtime
+    db.ref("mahasiswa").on("value", snapshot => {
       if (snapshot.exists()) {
-        mahasiswaList = snapshot.val();
-        localStorage.setItem("presensiData", JSON.stringify(mahasiswaList));
-        renderTabel();
-      }
-    });
+      mahasiswaList = snapshot.val();
+      localStorage.setItem("presensiData", JSON.stringify(mahasiswaList));
+      renderTabel();
+    } else {
+      mahasiswaList = [];
+      renderTabel();
+    }
+  });
 
     document.getElementById("uploadExcel").addEventListener("change", function(e) {
       const reader = new FileReader();
