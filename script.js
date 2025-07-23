@@ -17,8 +17,10 @@ let mahasiswaList = [];
 
 function renderTabel() {
   const tbody = document.getElementById("tabelMahasiswa");
+  const filterHadir = document.getElementById("filterHadir").checked;
   tbody.innerHTML = "";
   mahasiswaList.forEach(m => {
+    if (filterHadir && !m.hadir) return;
     const row = document.createElement("tr");
     row.className = m.hadir ? "hadir" : "";
     row.innerHTML = `
@@ -29,6 +31,7 @@ function renderTabel() {
     tbody.appendChild(row);
   });
 }
+document.getElementById("filterHadir").addEventListener("change", renderTabel);
 
 // Load from Firebase on page load
 db.ref("mahasiswa").once("value", snapshot => {
