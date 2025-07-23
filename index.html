@@ -122,10 +122,7 @@
     Sistem Absensi &copy; 2025 Tata Usaha
   </footer>
 
-  <!-- Lib Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
@@ -139,25 +136,28 @@
       appId: "1:136085367799:web:588762506e6c9874f95cf2",
       measurementId: "G-XT456P4P6G"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
     let mahasiswaList = [];
 
-   // Listener realtime
+    // Sinkronisasi realtime dari Firebase
     db.ref("mahasiswa").on("value", snapshot => {
       if (snapshot.exists()) {
-      mahasiswaList = snapshot.val();
-      localStorage.setItem("presensiData", JSON.stringify(mahasiswaList));
-      renderTabel();
-    } else {
-      mahasiswaList = [];
-      renderTabel();
-    }
-  });
+        mahasiswaList = snapshot.val();
+        localStorage.setItem("presensiData", JSON.stringify(mahasiswaList));
+        renderTabel();
+      } else {
+        mahasiswaList = [];
+        renderTabel();
+      }
+    });
 
     document.getElementById("uploadExcel").addEventListener("change", function(e) {
+      if (mahasiswaList.length > 0) {
+        alert("Data sudah ada. Hapus data terlebih dahulu untuk upload baru.");
+        return;
+      }
       const reader = new FileReader();
       reader.onload = function(e) {
         const data = new Uint8Array(e.target.result);
