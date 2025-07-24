@@ -30,9 +30,12 @@
         <label>Scan Barcode NIM</label><br/>
         <input type="text" id="scanInput" placeholder="Arahkan cursor & scan barcode" autofocus />
         <div id="notifikasi" style="margin-top:10px; color: green; font-weight: bold;"></div>
-        <label>
-          <input type="checkbox" id="filterHadir"> Tampilkan hanya yang hadir
-        </label>
+        <label><input type="checkbox" id="filterHadir"> Tampilkan yang sudah hadir</label>
+          <div id="toast" style="
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: #333; color: #fff; padding: 10px 20px;
+            border-radius: 5px; display: none; z-index: 9999;
+          "></div>
 
       </div>
       <div class="button-group">

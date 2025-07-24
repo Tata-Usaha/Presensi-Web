@@ -1,4 +1,3 @@
-// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCDpuIMrr6OcqhzeU54PxA5ecONwck-wng",
   authDomain: "sistem-absensi-tata-usaha.firebaseapp.com",
@@ -6,20 +5,20 @@ const firebaseConfig = {
   projectId: "sistem-absensi-tata-usaha",
   storageBucket: "sistem-absensi-tata-usaha.appspot.com",
   messagingSenderId: "136085367799",
-  appId: "1:136085367799:web:588762506e6c9874f95cf2",
-  measurementId: "G-XT456P4P6G"
+  appId: "1:136085367799:web:588762506e6c9874f95cf2"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let mahasiswaList = [];
+let mahasiswaList = {};
 
 function renderTabel() {
   const tbody = document.getElementById("tabelMahasiswa");
   const filterHadir = document.getElementById("filterHadir").checked;
   tbody.innerHTML = "";
-  mahasiswaList.forEach(m => {
+
+  Object.values(mahasiswaList).forEach(m => {
     if (filterHadir && !m.hadir) return;
     const row = document.createElement("tr");
     row.className = m.hadir ? "hadir" : "";
@@ -31,18 +30,27 @@ function renderTabel() {
     tbody.appendChild(row);
   });
 }
-document.getElementById("filterHadir").addEventListener("change", renderTabel);
+
+// Tampilkan toast notifikasi
+function showToast(msg) {
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.style.display = "block";
+  setTimeout(() => toast.style.display = "none", 2500);
+}
 
 // Load data realtime
-const mahasiswaRef = db.ref("mahasiswa");
-mahasiswaRef.on("value", snapshot => {
+db.ref("mahasiswa").on("value", snapshot => {
   if (snapshot.exists()) {
-    const data = snapshot.val();
-    mahasiswaList = Object.values(data);
+    mahasiswaList = snapshot.val();
     renderTabel();
   }
 });
 
+// Filter checkbox
+document.getElementById("filterHadir").addEventListener("change", renderTabel);
+
+// Upload Excel
 document.getElementById("uploadExcel").addEventListener("change", function(e) {
   const reader = new FileReader();
   reader.onload = function(e) {
@@ -50,40 +58,41 @@ document.getElementById("uploadExcel").addEventListener("change", function(e) {
     const workbook = XLSX.read(data, { type: "array" });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const json = XLSX.utils.sheet_to_json(sheet);
-    mahasiswaList = json.map(m => ({
-      nim: String(m.nim),
-      nama: m.nama,
-      prodi: m.prodi || "-",
-      hadir: false
-    }));
-    const dataObj = {};
-    mahasiswaList.forEach(m => {
-      dataObj[m.nim] = m;
+
+    const updates = {};
+    json.forEach(m => {
+      const nim = String(m.nim);
+      updates[nim] = {
+        nim: nim,
+        nama: m.nama,
+        prodi: m.prodi || "-",
+        hadir: false
+      };
     });
-    mahasiswaRef.set(dataObj);
-    renderTabel();
+    db.ref("mahasiswa").update(updates);
+    showToast("Data mahasiswa berhasil diunggah");
   };
   reader.readAsArrayBuffer(e.target.files[0]);
 });
 
+// Scan barcode input
 document.getElementById("scanInput").addEventListener("keydown", function(e) {
   if (e.key === "Enter") {
     const scannedNIM = e.target.value.trim();
-    const found = mahasiswaList.find(m => m.nim === scannedNIM);
-    if (found) {
-      found.hadir = true;
-      db.ref("mahasiswa/" + found.nim).update({ hadir: true });
-      renderTabel();
-      showToast("Scan berhasil: " + found.nama);
+    const mahasiswa = mahasiswaList[scannedNIM];
+    if (mahasiswa) {
+      db.ref("mahasiswa/" + scannedNIM).update({ hadir: true });
+      showToast(`${mahasiswa.nama} telah hadir`);
     } else {
-      showToast("NIM tidak ditemukan");
+      showToast(`NIM ${scannedNIM} tidak ditemukan`);
     }
     e.target.value = "";
   }
 });
 
+// Download rekap
 document.getElementById("downloadBtn").addEventListener("click", function () {
-  const data = mahasiswaList.map(m => ({
+  const data = Object.values(mahasiswaList).map(m => ({
     NIM: m.nim,
     Nama: m.nama,
     Prodi: m.prodi,
@@ -95,31 +104,23 @@ document.getElementById("downloadBtn").addEventListener("click", function () {
   XLSX.writeFile(workbook, "rekap_presensi.xlsx");
 });
 
+// Reset semua ke Belum Hadir
+
 document.getElementById("resetBtn").addEventListener("click", function () {
   if (confirm("Yakin ingin mereset semua status ke 'Belum Hadir'?")) {
-    mahasiswaList.forEach(m => m.hadir = false);
-    const dataObj = {};
-    mahasiswaList.forEach(m => {
-      dataObj[m.nim] = m;
+    const updates = {};
+    Object.keys(mahasiswaList).forEach(nim => {
+      updates[nim + "/hadir"] = false;
     });
-    mahasiswaRef.set(dataObj);
-    renderTabel();
+    db.ref("mahasiswa").update(updates);
+    showToast("Status kehadiran telah direset");
   }
 });
 
+// Hapus semua data
 document.getElementById("clearBtn").addEventListener("click", function () {
   if (confirm("Hapus semua data dari sistem ini?")) {
-    mahasiswaList = [];
-    mahasiswaRef.remove();
-    renderTabel();
+    db.ref("mahasiswa").remove();
+    showToast("Semua data telah dihapus");
   }
 });
-
-function showToast(message) {
-  const toast = document.getElementById("toast");
-  toast.textContent = message;
-  toast.className = "show";
-  setTimeout(() => {
-    toast.className = toast.className.replace("show", "");
-  }, 3000);
-}
