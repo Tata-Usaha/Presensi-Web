@@ -33,8 +33,9 @@ function renderTabel() {
 }
 document.getElementById("filterHadir").addEventListener("change", renderTabel);
 
-// Load from Firebase on page load
-db.ref("mahasiswa").once("value", snapshot => {
+// Load data realtime
+const mahasiswaRef = db.ref("mahasiswa");
+mahasiswaRef.on("value", snapshot => {
   if (snapshot.exists()) {
     const data = snapshot.val();
     mahasiswaList = Object.values(data);
@@ -59,7 +60,7 @@ document.getElementById("uploadExcel").addEventListener("change", function(e) {
     mahasiswaList.forEach(m => {
       dataObj[m.nim] = m;
     });
-    db.ref("mahasiswa").set(dataObj);
+    mahasiswaRef.set(dataObj);
     renderTabel();
   };
   reader.readAsArrayBuffer(e.target.files[0]);
@@ -71,12 +72,11 @@ document.getElementById("scanInput").addEventListener("keydown", function(e) {
     const found = mahasiswaList.find(m => m.nim === scannedNIM);
     if (found) {
       found.hadir = true;
-      const dataObj = {};
-      mahasiswaList.forEach(m => {
-        dataObj[m.nim] = m;
-      });
-      db.ref("mahasiswa").set(dataObj);
+      db.ref("mahasiswa/" + found.nim).update({ hadir: true });
       renderTabel();
+      showToast("Scan berhasil: " + found.nama);
+    } else {
+      showToast("NIM tidak ditemukan");
     }
     e.target.value = "";
   }
@@ -102,7 +102,7 @@ document.getElementById("resetBtn").addEventListener("click", function () {
     mahasiswaList.forEach(m => {
       dataObj[m.nim] = m;
     });
-    db.ref("mahasiswa").set(dataObj);
+    mahasiswaRef.set(dataObj);
     renderTabel();
   }
 });
@@ -110,7 +110,16 @@ document.getElementById("resetBtn").addEventListener("click", function () {
 document.getElementById("clearBtn").addEventListener("click", function () {
   if (confirm("Hapus semua data dari sistem ini?")) {
     mahasiswaList = [];
-    db.ref("mahasiswa").remove();
+    mahasiswaRef.remove();
     renderTabel();
   }
 });
+
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.className = "show";
+  setTimeout(() => {
+    toast.className = toast.className.replace("show", "");
+  }, 3000);
+}
