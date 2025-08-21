@@ -78,3 +78,27 @@ footer {
   flex-wrap: wrap;
   margin-top: 1rem;
 }
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: url('gedung.jpg') no-repeat center center fixed;
+  background-size: cover;
+  position: relative;
+}
+
+/* Overlay transparan */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(255,255,255,0.8); /* putih transparan 80% */
+  z-index: -1;
+}
+
+main {
+  padding: 20px;
+  background: rgba(255,255,255,0.9);
+  border-radius: 10px;
+}
